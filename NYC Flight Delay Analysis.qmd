@@ -1,0 +1,152 @@
+---
+title: "NYC Flight Delay Analysis"
+author: "Rashmi Vagha"
+format: html
+editor: visual
+---
+
+## This project analyzes NYC flight data from to explore patterns in flight delays. The goal is to identify factors affecting delays, visualize trends, and provide actionable insights for travelers and airlines.
+
+```{r}
+library(nycflights13)
+
+```
+
+```{r}
+data(flights)
+head(flights)
+```
+
+```{r}
+glimpse(flights)
+```
+
+```{r}
+summary(flights)
+```
+
+```{r}
+colSums(is.na(flights))
+```
+
+```{r}
+flights_clean <- flights %>%
+  select(year, month, day, dep_delay, arr_delay, carrier, origin, dest, air_time, distance) %>%
+  filter(!is.na(dep_delay) & !is.na(arr_delay))
+
+colSums(is.na(flights_clean))
+
+```
+
+```{r}
+flights_clean %>%
+  group_by(carrier) %>%
+  summarize(avg_dep_delay = mean(dep_delay),
+            avg_arr_delay = mean(arr_delay)) %>%
+  ggplot(aes(x = reorder(carrier, avg_dep_delay), y = avg_dep_delay)) +
+  geom_col(fill = "darkred") +
+  labs(title = "Average Departure Delay by Airline",
+       x = "Carrier",
+       y = "Average Departure Delay (minutes)") +
+  coord_flip()
+
+```
+
+```{r}
+flights_clean %>%
+  group_by(month) %>%
+  summarize(avg_dep_delay = mean(dep_delay)) %>%
+  ggplot(aes(x = month, y = avg_dep_delay)) +
+  geom_line(group = 1, color = "black") +
+  geom_point() +
+  labs(title = "Average Departure Delay by Month",
+       x = "Month",
+       y = "Average Departure Delay (minutes)")
+
+```
+
+```{r}
+ggplot(flights_clean, aes(x = distance, y = arr_delay)) +
+  geom_point(alpha = 0.3, color = "darkgreen") +
+  labs(title = "Arrival Delay vs Flight Distance",
+       x = "Distance (miles)",
+       y = "Arrival Delay (minutes)")
+
+```
+
+## Correlation Analysis
+
+```{r}
+numeric_vars <- flights_clean %>%
+  select(dep_delay, arr_delay, air_time, distance)
+
+```
+
+```{r}
+cor(numeric_vars)
+
+```
+
+```{r}
+install.packages("GGally")
+```
+
+```{r}
+
+library(GGally)
+GGally::ggpairs(numeric_vars)
+
+```
+
+```{r}
+install.packages("tidyverse")
+
+
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+numeric_vars <- flights_clean %>%
+  select(dep_delay, arr_delay, air_time, distance)
+
+```
+
+```{r}
+# Arrival delay vs departure delay
+ggplot(flights_clean, aes(x = dep_delay, y = arr_delay)) +
+  geom_point(alpha = 0.3, color = "blue") +
+  labs(title = "Arrival Delay vs Departure Delay",
+       x = "Departure Delay (min)",
+       y = "Arrival Delay (min)")
+
+```
+
+## Hypothesis Testing
+
+```{r}
+flights_clean %>%
+  group_by(origin) %>%
+  summarize(avg_dep_delay = mean(dep_delay),
+            avg_arr_delay = mean(arr_delay),
+            n = n())
+
+```
+
+```{r}
+anova_result <- aov(dep_delay ~ origin, data = flights_clean)
+summary(anova_result)
+
+```
+
+```{r}
+ggplot(flights_clean, aes(x = origin, y = dep_delay, fill = origin)) +
+  geom_boxplot() +
+  labs(title = "Departure Delays by Airport",
+       x = "Airport",
+       y = "Departure Delay (minutes)") +
+  theme(legend.position = "none")
+
+```
